@@ -1,9 +1,19 @@
 
 CC = gcc
 CFLAGS  = -g -W -Wall
-# you'll have to edit these to reflect where your "teem-build" is
-IPATH = -I/Users/gk/teem-build/include/
-LPATH = -L/Users/gk/teem-build/bin
+# you'll have to set TEEM_INSTALL to reflect where your "teem-build" is
+ifeq (undefined,$(origin TEEM_INSTALL))
+  $(warning *)
+  $(warning *)
+  $(warning * Need variable TEEM_INSTALL to be path to Teem installation,)
+  $(warning * from CMake, with "include" and "lib" subdirectories.)
+  $(warning *)
+  $(warning *)
+  $(error Make quitting)
+endif
+
+IPATH = -I$(TEEM_INSTALL)/include/
+LPATH = -L$(TEEM_INSTALL)/lib
 
 ifeq ($(OS), WINNT)
   SHLIB_EXT = dll
