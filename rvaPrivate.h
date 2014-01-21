@@ -21,12 +21,7 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#include "rva.h"
+#define LNSQ(vec) ((vec)[0]*(vec)[0] + (vec)[1]*(vec)[1])
 
-int
-main(int argc, const char **argv) {
-
-  return rvaMain(argc, argv,
-                 "reva", "Brevais Lattice Hacking",
-                 rvaCmdList, stderr);
-}
+/* util.c */
+extern void _rvaSwap2(double A[2], double B[2]);

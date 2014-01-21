@@ -1,13 +1,35 @@
-#include "rva.h"
+/*
+  rva: experiments in computing in the space of Brevais Lattices
+  Copyright (C) 2014  University of Chicago
 
-static void
-swapVec(double A[2], double B[2]) {
+  This software is provided 'as-is', without any express or implied
+  warranty.  In no event will the authors be held liable for any
+  damages arising from the use of this software.
+
+  Permission is granted to anyone to use this software for any
+  purpose, including commercial applications, and to alter it and
+  redistribute it freely, subject to the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must
+     not claim that you wrote the original software. If you use this
+     software in a product, an acknowledgment in the product
+     documentation would be appreciated but is not required.
+
+  2. Altered source versions must be plainly marked as such, and must
+     not be misrepresented as being the original software.
+
+  3. This notice may not be removed or altered from any source distribution.
+*/
+
+#include "rva.h"
+#include "rvaPrivate.h"
+
+void
+_rvaSwap2(double A[2], double B[2]) {
   double tt;
   tt = A[0]; A[0] = B[0]; B[0] = tt;
   tt = A[1]; A[1] = B[1]; B[1] = tt;
 }
-
-#define LNSQ(vec) ((vec)[0]*(vec)[0] + (vec)[1]*(vec)[1])
 
 static void
 printVec(char *prefix, double A[2], double B[2]) {
@@ -28,7 +50,7 @@ rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
   do {
     if (LNSQ(A) < LNSQ(B)) {
       count[RVA_FOLD_SWAP] += 1;
-      swapVec(A, B);
+      _rvaSwap2(A, B);
       if (verbose > 1) {
         printVec(" A <-> B", A, B);
       }
@@ -64,7 +86,7 @@ rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
   /* seems to never happen? */
   if (LNSQ(A) < LNSQ(B)) {
     fprintf(stderr, "final swap!\n");
-    swapVec(A, B);
+    _rvaSwap2(A, B);
   }
   if (1) {
     double rot[4], tv[2];
