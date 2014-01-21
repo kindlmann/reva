@@ -28,14 +28,16 @@
 const unsigned int rvaLattParmNum[RVA_LATT_MAX+1] = {
   0, /* unknown */
   4, /* ab */
-  3  /* pra */
+  3, /* pra */
+  2, /* xy */
 };
 
 const char *
 rvaLattStr[RVA_LATT_MAX+1] = {
   "(unknown_lattice)",
   "ab",
-  "pra"
+  "pra",
+  "xy"
 };
 
 const airEnum
@@ -175,6 +177,93 @@ rvaLattSpecSprint(char *str, const rvaLattSpec *lsp) {
   return str;
 }
 
+static void
+getToPosY(double AA[2], double BB[2]) {
+  double theta, rot[4];
+
+  if (LNSQ(AA) < LNSQ(BB)) {
+    _rvaSwap2(AA, BB);
+  }
+  theta = atan2(AA[1], AA[0]);
+  ELL_2M_ROTATE_SET(rot, -theta);
+  _rvaRot2(AA, rot, AA);
+  _rvaRot2(BB, rot, BB);
+  if (BB[1] < 0) {
+    ELL_2V_SCALE(BB, -1, BB);
+  }
+}
+
+static int
+lattConv(int dstLatt, double *dstParm,
+         int srcLatt, const double *srcParm) {
+  double AA[2], BB[2], TT[2], theta, phase, radi, area, len,
+    tparm[RVA_LATT_PARM_NUM];
+  int ret;
+
+  ret = 0;
+  switch(srcLatt) {
+  case rvaLattAB:
+    switch(dstLatt) {
+    case rvaLattPRA:   /* AB -> PRA (loss off orientation) */
+      ELL_2V_COPY(AA, srcParm + 0);
+      ELL_2V_COPY(BB, srcParm + 2);
+      getToPosY(AA, BB);
+      theta = atan2(BB[1], BB[0]);
+      phase = AIR_AFFINE(AIR_PI/2, theta, AIR_PI/3, 0.0, 1.0);
+      radi = _rvaLen2(BB)/_rvaLen2(AA);
+      area = _rvaLen2(AA)*BB[1];
+      ELL_3V_SET(dstParm, phase, radi, area);
+      break;
+    case rvaLattXY:   /* AB -> XY (loss of orientation and scale) */
+      getToPosY(AA, BB);
+      len = _rvaLen2(AA);
+      ELL_2V_SET(dstParm, BB[0]/len, BB[1]/len);
+      break;
+    default: ret = 1; break;
+    }
+    break;
+  case rvaLattPRA:
+    switch(dstLatt) {
+      double scl, uar;
+    case rvaLattAB: /* PRA -> AB */
+      area = AIR_ABS(srcParm[2]);
+      theta = AIR_AFFINE(0, srcParm[0], 1, AIR_PI/2, AIR_PI/3);
+      radi = srcParm[1];
+      ELL_2V_SET(AA, 1.0, 0.0);
+      ELL_2V_SET(BB, radi*cos(theta), radi*sin(theta));
+      /* area from AA and BB is BB[1], but need to scale
+         these to get to requested area */
+      scl = sqrt(area/BB[1]);
+      ELL_4V_SET(dstParm, scl*AA[0], scl*AA[1], scl*BB[0], scl*BB[1]);
+      break;
+    case rvaLattXY: /* PRA -> XY: PRA -> AB -> XY */
+      if (lattConv(rvaLattAB,   tparm, rvaLattPRA, srcParm) ||
+          lattConv(rvaLattXY, dstParm, rvaLattAB, srcParm)) {
+        ret = 1; break;
+      }
+      break;
+    default: ret = 1; break;
+    }
+    break;
+  case rvaLattXY:
+    switch(dstLatt) {
+    case rvaLattAB:  /* XY -> AB */
+      ELL_4V_SET(dstParm, 1.0, 0.0, srcParm[0], srcParm[1]);
+      break;
+    case rvaLattPRA: /* XY -> PRA: XY -> AB -> PRA */
+      if (lattConv(rvaLattAB,    tparm, rvaLattXY, srcParm) ||
+          lattConv(rvaLattPRA, dstParm, rvaLattAB, srcParm)) {
+        ret = 1; break;
+      }
+      break;
+    default: ret = 1; break;
+    }
+    break;
+  default: ret = 1; break;
+  }
+  return ret;
+}
+
 int
 rvaLattSpecConvert(rvaLattSpec *dst, int latt, const rvaLattSpec *src) {
   static const char me[]="rvaLattSpecConvert";
@@ -193,40 +282,14 @@ rvaLattSpecConvert(rvaLattSpec *dst, int latt, const rvaLattSpec *src) {
     return 0;
   }
   /* else have work to do */
-  nocando = AIR_FALSE;
-  if (rvaLattAB == src->latt) {
-    switch (latt) {
-      double AA[2], BB[2], TT[2];
-    case rvaLattPRA:
-      ELL_2V_COPY(AA, src->parm + 0);
-      ELL_2V_COPY(BB, src->parm + 2);
-      if (LNSQ(AA) < LNSQ(BB)) {
-        _rvaSwap2(AA, BB);
-      }
-      /* rotate A to positive x axis */
-      /* flip B into positive y if needed */
-      /* atan2(B) to get phase */
-      /* |B|/|A| to get radius */
-      /* ? to get area */
-      break;
-    default:
-      nocando = AIR_TRUE;
-    }
-  } else if (rvaLattPRA == src->latt) {
-    switch (latt) {
-      /*
-    case rvaLattAB:
-      break;
-      */
-    default:
-      nocando = AIR_TRUE;
-    }
-  }
-  if (nocando) {
+  if (lattConv(latt, dst->parm, src->latt, src->parm)) {
+    dst->latt = rvaLattUnknown;
     biffAddf(RVA, "%s: %s -> %s conversion not implemented", me,
              airEnumStr(rvaLatt, src->latt), airEnumStr(rvaLatt, latt));
     return 1;
   }
+  /* else */
+  dst->latt = latt;
 
   return 0;
 }

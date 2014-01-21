@@ -31,6 +31,18 @@ _rvaSwap2(double A[2], double B[2]) {
   tt = A[1]; A[1] = B[1]; B[1] = tt;
 }
 
+void
+_rvaRot2(double A[2], const double rot[4], const double B[2]) {
+  double tv[2];
+  ELL_2V_COPY(tv, B);
+  ELL_2MV_MUL(A, rot, tv);
+}
+
+double
+_rvaLen2(const double A[2]) {
+  return sqrt(ELL_2V_DOT(A, A));
+}
+
 static void
 printVec(char *prefix, double A[2], double B[2]) {
   fprintf(stderr, "%s: A=(%g,%g) (len=%g)   B=(%g,%g) (len=%g)\n", prefix,

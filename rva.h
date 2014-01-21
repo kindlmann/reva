@@ -47,15 +47,17 @@
 #define RVA_FOLD_NUM      3
 
 /* different ways of identifying a lattice */
+/* have to keep synch with spec.c:rvaLattParmNum[] */
 enum {
   rvaLattUnknown, /* 0: unknown or not set */
   rvaLattAB,      /* 1: "ab" 4 values: 2 vectors in (x,y): (Ax,Ay) (Bx,By) */
   rvaLattPRA,     /* 2: "pra" 3 values: phase in [0,1] --> [pi/2,pi/3],
                      radius in [0,1], and area */
+  rvaLattXY,      /* 3: "xy" 2 values: (1,0) and (x,y) */
   rvaLattLast
 };
-#define RVA_LATT_MAX 2
-#define RVA_LATT_PARM_NUM 4  /* has to be max of rvaLattParmNum[] */
+#define RVA_LATT_MAX 3
+#define RVA_LATT_PARM_NUM 4  /* has to be max of spec.c:rvaLattParmNum[] */
 
 typedef struct {
   int latt;                          /* from rvaLatt* enum */

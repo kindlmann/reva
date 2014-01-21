@@ -25,3 +25,5 @@
 
 /* util.c */
 extern void _rvaSwap2(double A[2], double B[2]);
+extern void _rvaRot2(double A[2], const double rot[4], const double B[2]);
+extern double _rvaLen2(const double A[2]);

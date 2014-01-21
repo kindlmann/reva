@@ -29,12 +29,15 @@ static const char *longInfo =
    "");
 
 int
-lpict(FILE *file, double lvec[3], int uni,
+lpict(FILE *file, const rvaLattSpec *lsp,
       double min[2], double max[2], double scl,
       double rad[2]) {
+  rvaLattSpec *lspAB;
   double A[2], B[2], bbox[2][2];
   int ai, bi;
 
+  lspAB = rvaLattSpecNew();
+  rvaLattSpecConvert(lspAB, rvaLattAB, lsp);
   if (uni) {
     A[0] = lvec[2];
     A[1] = 0.0;
@@ -139,6 +142,7 @@ lpict(FILE *file, double lvec[3], int uni,
   }
 
   fprintf(file, "grestore\n");
+  rvaLattSpecNix(lspAB);
   return 0;
 }
 
@@ -149,7 +153,8 @@ rva_diaMain(int argc, const char **argv, const char *me,
   airArray *mop;
 
   FILE *fout;
-  double lvec[3], min[2], max[2], scl, rad[2];
+  double min[2], max[2], scl, rad[2];
+  rvaLattSpec *lsp, *lsp
   char *outStr;
   int uni;
 
