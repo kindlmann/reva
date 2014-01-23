@@ -25,8 +25,27 @@
 
 int
 main(int argc, const char **argv) {
+  hestParm *hparm;
+  airArray *mop;
+  int ret;
 
-  return rvaMain(argc, argv,
-                 "reva", "Brevais Lattice Hacking",
-                 rvaCmdList, stderr);
+  mop = airMopNew();
+  hparm = hestParmNew();
+  /*
+  hparm->elideSingleEnumType = AIR_TRUE;
+  hparm->elideSingleOtherType = AIR_TRUE;
+  hparm->elideSingleOtherDefault = AIR_FALSE;
+  hparm->elideSingleNonExistFloatDefault = AIR_TRUE;
+  hparm->elideMultipleNonExistFloatDefault = AIR_TRUE;
+  hparm->elideSingleEmptyStringDefault = AIR_TRUE;
+  hparm->elideMultipleEmptyStringDefault = AIR_TRUE;
+  */
+  hparm->cleverPluralizeOtherY = AIR_TRUE;
+  hparm->columns = 78;
+  airMopAdd(mop, hparm, (airMopper)hestParmFree, airMopAlways);
+  ret = rvaMain(argc, argv,
+                "reva", "Brevais Lattice Hacking",
+                rvaCmdList, hparm, stderr);
+  airMopOkay(mop);
+  return ret;
 }

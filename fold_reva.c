@@ -23,10 +23,13 @@
 
 #include "rva.h"
 
-#define INFO "fold given vector(s) into unique Brevais space"
+#define INFO "fold pixels (or vector) into unique Brevais space"
 static const char *longInfo =
   (INFO ".\n "
-   "* Uses rvaVecsFold");
+   "Using \"-i\", the given nrrd must be shaped like a grayscale or "
+   "a color image, and have per-axis min and max that define its domain "
+   "in the space of (x,y) vectors, or, a single (x,y) can be given "
+   "with \"-s\".  Each (x,y) defines a lattice with (1,0). ");
 
 int
 rva_foldMain(int argc, const char **argv, const char *me,
@@ -73,7 +76,7 @@ rva_foldMain(int argc, const char **argv, const char *me,
     fprintf(stderr, "A = (%g,%g)  |%g|\n", A[0], A[1], ELL_2V_LEN(A));
     fprintf(stderr, "S = (%g,%g)  |%g|\n", S[0], S[1], ELL_2V_LEN(S));
     ELL_3V_SET(count, 0, 0, 0);
-    rvaVecsFold(count, A, S, verbose);
+    rvaVecsFold(count, A, S, AIR_TRUE /* reorient */, verbose);
     fprintf(stderr, "----- post-fold\n");
     fprintf(stderr, "A = (%g,%g)  |%g|\n", A[0], A[1], ELL_2V_LEN(A));
     fprintf(stderr, "S = (%g,%g)  |%g|\n", S[0], S[1], ELL_2V_LEN(S));
@@ -134,7 +137,7 @@ rva_foldMain(int argc, const char **argv, const char *me,
       ELL_2V_COPY(oldA, A);
       ELL_2V_COPY(oldB, B);
       ELL_3V_SET(count, 0, 0, 0);
-      rvaVecsFold(count, A, B, verbose);
+      rvaVecsFold(count, A, B, AIR_TRUE /* reorient */, verbose);
       if (zeroFold) {
         if (count[0] || count[1] || count[2]) {
           if (color) {

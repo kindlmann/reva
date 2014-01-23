@@ -212,11 +212,14 @@ static void
 getToPosY(double AA[2], double BB[2]) {
   double theta, rot[4];
 
-  /* GLK is ambivalent about this ...
+  /* GLK is ambivalent about this, because its part of,
+     but not all of, folding into a canonical representation */
+  /*
   if (LNSQ(AA) < LNSQ(BB)) {
     _rvaSwap2(AA, BB);
   }
   */
+
   theta = atan2(AA[1], AA[0]);
   ELL_2M_ROTATE_SET(rot, -theta);
   _rvaRot2(AA, rot, AA);

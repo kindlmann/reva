@@ -39,14 +39,20 @@ rvaCmdList[] = {
 ** the "main" function for the reva command, which is like
 ** teem/src/limn/test/lpu.c:main(), which is like
 ** teem/src/bin/tend.c
+**
 ** If it is generalized right, this may find its way into the unrrdu library.
-** One issue is whether the hparm struct should be passed here
-** versus trusting all the settings below.
+** A sneaky but basic issue is the const-correctness of how the hestParm
+** is used; we'd like to take a const hestParm* to communicate parameters
+** the caller has set, but the show-stopper is that unrrduCmd->main()
+** takes a non-const hestParm, and it has to be that way, because some
+** unu commands alter the given hparm (which probably shouldn't happen).
+** Until that's fixed, we have a non-const hestParm* coming in here.
 */
 int
 rvaMain(int argc, const char **argv,
         const char *cmd, const char *title,
-        const unrrduCmd *const *cmdList, FILE *fusage) {
+        const unrrduCmd *const *cmdList,
+        hestParm *_hparm, FILE *fusage) {
   int i, ret;
   const char *me;
   char *argv0 = NULL;
@@ -63,19 +69,23 @@ rvaMain(int argc, const char **argv,
   nrrdSanityOrDie(me);
 
   mop = airMopNew();
-  hparm = hestParmNew();
-  airMopAdd(mop, hparm, (airMopper)hestParmFree, airMopAlways);
-  hparm->elideSingleEnumType = AIR_TRUE;
-  hparm->elideSingleOtherType = AIR_TRUE;
-  hparm->elideSingleOtherDefault = AIR_FALSE;
-  hparm->elideSingleNonExistFloatDefault = AIR_TRUE;
-  hparm->elideMultipleNonExistFloatDefault = AIR_TRUE;
-  hparm->elideSingleEmptyStringDefault = AIR_TRUE;
-  hparm->elideMultipleEmptyStringDefault = AIR_TRUE;
-  hparm->cleverPluralizeOtherY = AIR_TRUE;
-  /* this would be the place to learn the actual number of columns
-     in the current terminal */
-  hparm->columns = 78;
+  if (_hparm) {
+    hparm = _hparm;
+  } else {
+    hparm = hestParmNew();
+    airMopAdd(mop, hparm, (airMopper)hestParmFree, airMopAlways);
+    hparm->elideSingleEnumType = AIR_TRUE;
+    hparm->elideSingleOtherType = AIR_TRUE;
+    hparm->elideSingleOtherDefault = AIR_FALSE;
+    hparm->elideSingleNonExistFloatDefault = AIR_TRUE;
+    hparm->elideMultipleNonExistFloatDefault = AIR_TRUE;
+    hparm->elideSingleEmptyStringDefault = AIR_TRUE;
+    hparm->elideMultipleEmptyStringDefault = AIR_TRUE;
+    hparm->cleverPluralizeOtherY = AIR_TRUE;
+    /* this would be the place to learn the actual number of columns
+       in the current terminal */
+    hparm->columns = 78;
+  }
 
   /* if there are no arguments, then we give general usage information */
   if (1 >= argc) {

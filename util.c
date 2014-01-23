@@ -49,9 +49,13 @@ printVec(char *prefix, double A[2], double B[2]) {
           A[0], A[1], ELL_2V_LEN(A), B[0], B[1], ELL_2V_LEN(B));
 }
 
+/*
+** need non-zero reorient in order to get canonical representation
+*/
 void
 rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
-            double A[2], double B[2], int verbose) {
+            double A[2], double B[2],
+            int reorient, int verbose) {
   double P[2], M[2], thA, thB, lenA, lenB, epsilon=1e-15;
 
   if (verbose > 1) {
@@ -100,27 +104,15 @@ rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
     fprintf(stderr, "final swap!\n");
     _rvaSwap2(A, B);
   }
-  if (1) {
+  if (reorient) {
     double rot[4], tv[2];
     thA = atan2(A[1], A[0]);
     ELL_2M_ROTATE_SET(rot, -thA);
-    /* HEY: would be nice to somehow preserve the orientation
-       of the A and B that came in ... */
     ELL_2MV_MUL(tv, rot, A); ELL_2V_COPY(A, tv);
     ELL_2MV_MUL(tv, rot, B); ELL_2V_COPY(B, tv);
     if (B[1] < 0) {
       ELL_2V_SCALE(B, -1, B);
     }
-  } else {
-    /* old code, but WRONG: can't just take abs() of B coords */
-    lenA = ELL_2V_LEN(A);
-    lenB = ELL_2V_LEN(B);
-    thA = atan2(A[1], A[0]);
-    thB = atan2(B[1], B[0]);
-    A[0] = ELL_2V_LEN(A);
-    A[1] = 0.0;
-    B[0] = AIR_ABS(lenB*cos(thB - thA));
-    B[1] = AIR_ABS(lenB*sin(thB - thA));
   }
   if (verbose > 1) {
     printVec(" postrot", A, B);

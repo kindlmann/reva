@@ -32,23 +32,22 @@ int
 lpict(FILE *file, const rvaLattSpec *lsp,
       double min[2], double max[2], double scl,
       double rad[2]) {
-  rvaLattSpec *lspUVW;
+  rvaLattSpec *lspAB;
   double A[2], B[2], bbox[2][2];
   int ai, bi;
 
-  lspUVW = rvaLattSpecNew();
-  rvaLattSpecConvert(lspUVW, rvaLattUVW, lsp);
-  if (0 /* uni */) {
+  lspAB = rvaLattSpecNew();
+  rvaLattSpecConvert(lspAB, rvaLattAB, lsp);
+  /*
+  if (uni) {
     A[0] = lspUVW->parm[2];
     A[1] = 0.0;
     B[0] = lspUVW->parm[0]*lspUVW->parm[1]*A[0];
     B[1] = lspUVW->parm[1]*A[0];
   } else {
-    A[0] = lspUVW->parm[2];
-    A[1] = 0.0;
-    B[0] = lspUVW->parm[0]; /* *A[0]; */
-    B[1] = lspUVW->parm[1]; /* *A[0]; */
-  }
+  */
+  ELL_2V_COPY(A, lspAB->parm + 0);
+  ELL_2V_COPY(B, lspAB->parm + 2);
   bbox[0][0] = scl*min[0]; /* min */
   bbox[0][1] = scl*min[1];
   bbox[1][0] = scl*max[0]; /* max */
@@ -142,7 +141,7 @@ lpict(FILE *file, const rvaLattSpec *lsp,
   }
 
   fprintf(file, "grestore\n");
-  rvaLattSpecNix(lspUVW);
+  rvaLattSpecNix(lspAB);
   return 0;
 }
 
@@ -160,7 +159,7 @@ rva_diaMain(int argc, const char **argv, const char *me,
 
   mop = airMopNew();
   hopt = NULL;
-  hestOptAdd(&hopt, "l", "latt", airTypeOther, 1, 1, &lsp, NULL,
+  hestOptAdd(&hopt, NULL, "latt", airTypeOther, 1, 1, &lsp, NULL,
              "lattice definition", NULL, NULL, rvaHestLattSpec);
   /*
   hestOptAdd(&hopt, "uni", NULL, airTypeInt, 0, 0, &uni, NULL,

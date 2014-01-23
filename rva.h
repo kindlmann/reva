@@ -80,7 +80,8 @@ RVA_EXPORT char *rvaLattSpecSprint(char *str, const rvaLattSpec *lsp);
 
 /* util.c */
 RVA_EXPORT void rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
-                            double A[2], double B[2], int verbose);
+                            double A[2], double B[2],
+                            int reorient, int verbose);
 RVA_EXPORT void rvaPhiArea2Vecs(double A[2], double B[2],
                                 double phi, double area);
 RVA_EXPORT double rvaPsi(unsigned int *maxRadius,
@@ -88,6 +89,10 @@ RVA_EXPORT double rvaPsi(unsigned int *maxRadius,
                          double AA[2], double BB[2]);
 
 /* flotsam.c */
+RVA_EXPORT int rvaMain(int argc, const char **argv,
+                       const char *cmd, const char *title,
+                       const unrrduCmd *const *cmdList,
+                       hestParm *hparm, FILE *fusage);
 #define RVA_DECLARE(C) RVA_EXPORT unrrduCmd rva_##C##Cmd;
 #define RVA_LIST(C) &rva_##C##Cmd,
 /* F(vwflip) \ */
@@ -100,6 +105,3 @@ RVA_EXPORT double rvaPsi(unsigned int *maxRadius,
   F(dia)
 RVA_MAP(RVA_DECLARE)
 RVA_EXPORT const unrrduCmd *const rvaCmdList[];
-RVA_EXPORT int rvaMain(int argc, const char **argv,
-                       const char *cmd, const char *title,
-                       const unrrduCmd *const *cmdList, FILE *fusage);

@@ -24,9 +24,9 @@
 #include "rva.h"
 
 #define INFO "convert between lattice specifications"
-static const char *longInfo = (INFO ".");
-  /*   (INFO ".\n "
-       "* Uses rvaVecsFold"); */
+static const char *longInfo =
+  (INFO ".\n "
+   "The output lattice definition is printed to stdout.");
 
 int
 rva_convMain(int argc, const char **argv, const char *me,
@@ -36,17 +36,23 @@ rva_convMain(int argc, const char **argv, const char *me,
   airArray *mop;
 
   rvaLattSpec *lspA, *lspB;
-  int lattB;
+  int lattB, fold, reo, ret;
   char buff[AIR_STRLEN_LARGE];
 
   mop = airMopNew();
   hopt = NULL;
-  hestOptAdd(&hopt, "from", "latt", airTypeOther, 1, 1, &lspA, NULL,
+  hestOptAdd(&hopt, NULL, "from latt", airTypeOther, 1, 1, &lspA, NULL,
              "lattice to convert from",
              NULL, NULL, rvaHestLattSpec);
-  hestOptAdd(&hopt, "to", "meth", airTypeEnum, 1, 1, &lattB, NULL,
+  hestOptAdd(&hopt, NULL, "to meth", airTypeEnum, 1, 1, &lattB, NULL,
              "lattice definition method to convert to",
              NULL, rvaLatt);
+  hestOptAdd(&hopt, "fold", NULL, airTypeInt, 0, 0, &fold, NULL,
+             "apply folding to get to canonical representation, "
+             "up to orientation (which is preserved without \"-reo\")");
+  hestOptAdd(&hopt, "reo", NULL, airTypeInt, 0, 0, &reo, NULL,
+             "if folding (with \"-fold\"), also reorient, to really "
+             "get to canonical representation");
   hestParseOrDie(hopt, argc, argv, hparm,
                  me, longInfo, AIR_TRUE, AIR_TRUE, AIR_TRUE);
   airMopAdd(mop, hopt, (airMopper)hestOptFree, airMopAlways);
@@ -54,7 +60,19 @@ rva_convMain(int argc, const char **argv, const char *me,
 
   lspB = rvaLattSpecNew();
   airMopAdd(mop, lspB, (airMopper)rvaLattSpecNix, airMopAlways);
-  if (rvaLattSpecConvert(lspB, lattB, lspA)) {
+  if (!fold) {
+    ret = rvaLattSpecConvert(lspB, lattB, lspA);
+  } else {
+    rvaLattSpec *AABB;
+    unsigned int count[RVA_FOLD_NUM];
+    AABB = rvaLattSpecNew();
+    airMopAdd(mop, AABB, (airMopper)rvaLattSpecNix, airMopAlways);
+    ret = (rvaLattSpecConvert(AABB, rvaLattAB, lspA) ||
+           (rvaVecsFold(count, AABB->parm + 0, AABB->parm + 2,
+                        reo, AIR_FALSE), 0) ||
+           rvaLattSpecConvert(lspB, lattB, AABB));
+  }
+  if (ret) {
     airMopAdd(mop, err = biffGetDone(RVA), airFree, airMopAlways);
     fprintf(stderr, "%s: error converting:\n%s", me, err);
     airMopError(mop); return 1;
