@@ -32,22 +32,22 @@ int
 lpict(FILE *file, const rvaLattSpec *lsp,
       double min[2], double max[2], double scl,
       double rad[2]) {
-  rvaLattSpec *lspAB;
+  rvaLattSpec *lspUVW;
   double A[2], B[2], bbox[2][2];
   int ai, bi;
 
-  lspAB = rvaLattSpecNew();
-  rvaLattSpecConvert(lspAB, rvaLattAB, lsp);
-  if (uni) {
-    A[0] = lvec[2];
+  lspUVW = rvaLattSpecNew();
+  rvaLattSpecConvert(lspUVW, rvaLattUVW, lsp);
+  if (0 /* uni */) {
+    A[0] = lspUVW->parm[2];
     A[1] = 0.0;
-    B[0] = lvec[0]*lvec[1]*A[0];
-    B[1] = lvec[1]*A[0];
+    B[0] = lspUVW->parm[0]*lspUVW->parm[1]*A[0];
+    B[1] = lspUVW->parm[1]*A[0];
   } else {
-    A[0] = lvec[2];
+    A[0] = lspUVW->parm[2];
     A[1] = 0.0;
-    B[0] = lvec[0]; /* *A[0]; */
-    B[1] = lvec[1]; /* *A[0]; */
+    B[0] = lspUVW->parm[0]; /* *A[0]; */
+    B[1] = lspUVW->parm[1]; /* *A[0]; */
   }
   bbox[0][0] = scl*min[0]; /* min */
   bbox[0][1] = scl*min[1];
@@ -142,7 +142,7 @@ lpict(FILE *file, const rvaLattSpec *lsp,
   }
 
   fprintf(file, "grestore\n");
-  rvaLattSpecNix(lspAB);
+  rvaLattSpecNix(lspUVW);
   return 0;
 }
 
@@ -154,16 +154,18 @@ rva_diaMain(int argc, const char **argv, const char *me,
 
   FILE *fout;
   double min[2], max[2], scl, rad[2];
-  rvaLattSpec *lsp, *lsp
+  rvaLattSpec *lsp;
   char *outStr;
-  int uni;
+  /* int uni; */
 
   mop = airMopNew();
   hopt = NULL;
-  hestOptAdd(&hopt, "v", "u v w", airTypeDouble, 3, 3, lvec, NULL,
-             "vector identifying lattice");
+  hestOptAdd(&hopt, "l", "latt", airTypeOther, 1, 1, &lsp, NULL,
+             "lattice definition", NULL, NULL, rvaHestLattSpec);
+  /*
   hestOptAdd(&hopt, "uni", NULL, airTypeInt, 0, 0, &uni, NULL,
              "assuming parameterization of uniform lattice PDF");
+  */
   hestOptAdd(&hopt, "min", "minX minY", airTypeDouble, 2, 2, min, "0 0",
              "lower left corner");
   hestOptAdd(&hopt, "max", "maxX maxY", airTypeDouble, 2, 2, max, "2 2",
@@ -185,7 +187,7 @@ rva_diaMain(int argc, const char **argv, const char *me,
   }
   airMopAdd(mop, fout, (airMopper)airFclose, airMopAlways);
 
-  lpict(fout, lvec, uni, min, max, scl, rad);
+  lpict(fout, lsp, min, max, scl, rad);
 
   airMopOkay(mop);
   return 0;

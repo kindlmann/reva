@@ -53,10 +53,11 @@ enum {
   rvaLattAB,      /* 1: "ab" 4 values: 2 vectors in (x,y): (Ax,Ay) (Bx,By) */
   rvaLattPRA,     /* 2: "pra" 3 values: phase in [0,1] --> [pi/2,pi/3],
                      radius in [0,1], and area */
-  rvaLattXY,      /* 3: "xy" 2 values: (1,0) and (x,y) */
+  rvaLattUVW,     /* 3: "uvw" 3 values: (w,0) and (u,v) */
+  rvaLattXY,      /* 4: "xy" 2 values: (1,0) and (x,y) */
   rvaLattLast
 };
-#define RVA_LATT_MAX 3
+#define RVA_LATT_MAX 4
 #define RVA_LATT_PARM_NUM 4  /* has to be max of spec.c:rvaLattParmNum[] */
 
 typedef struct {

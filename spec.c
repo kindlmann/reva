@@ -29,6 +29,7 @@ const unsigned int rvaLattParmNum[RVA_LATT_MAX+1] = {
   0, /* unknown */
   4, /* ab */
   3, /* pra */
+  3, /* uvw */
   2, /* xy */
 };
 
@@ -37,6 +38,7 @@ rvaLattStr[RVA_LATT_MAX+1] = {
   "(unknown_lattice)",
   "ab",
   "pra",
+  "uvw",
   "xy"
 };
 
@@ -177,6 +179,35 @@ rvaLattSpecSprint(char *str, const rvaLattSpec *lsp) {
   return str;
 }
 
+/* XX != AB */
+static int
+lattXXtoAB(double *dstParm, int srcLatt, const double *srcParm) {
+  double AA[2], BB[2], area, theta, radi, scl;
+  int ret = 0;
+
+  switch(srcLatt) {
+  case rvaLattPRA:  /* PRA -> AB */
+    area = AIR_ABS(srcParm[2]);
+    theta = AIR_AFFINE(0, srcParm[0], 1, AIR_PI/2, AIR_PI/3);
+    radi = srcParm[1];
+    ELL_2V_SET(AA, 1.0, 0.0);
+    ELL_2V_SET(BB, radi*cos(theta), radi*sin(theta));
+    /* area from AA and BB is BB[1], but need to scale
+       these to get to requested area */
+    scl = sqrt(area/BB[1]);
+    ELL_4V_SET(dstParm, scl*AA[0], scl*AA[1], scl*BB[0], scl*BB[1]);
+    break;
+  case rvaLattAB:  /* UVW -> AB */
+    ELL_4V_SET(dstParm, srcParm[2], 0.0, srcParm[0], srcParm[1]);
+    break;
+  case rvaLattXY:  /* XY -> AB */
+    ELL_4V_SET(dstParm, 1.0, 0.0, srcParm[0], srcParm[1]);
+    break;
+  default: ret = 1; break; /* unimplemented */
+  }
+  return ret;
+}
+
 static void
 getToPosY(double AA[2], double BB[2]) {
   double theta, rot[4];
@@ -193,74 +224,56 @@ getToPosY(double AA[2], double BB[2]) {
   }
 }
 
+/* XX != AB */
+static int
+lattABtoXX(int dstLatt, double *dstParm, const double *srcParm) {
+  double AA[2], BB[2], theta, phase, radi, area, len;
+  int ret = 0;
+
+  /* we have to reduce the DOF, which always starts with the same
+     loss of orientation information */
+  ELL_2V_COPY(AA, srcParm + 0);
+  ELL_2V_COPY(BB, srcParm + 2);
+  getToPosY(AA, BB);
+  switch(dstLatt) {
+  case rvaLattPRA:   /* AB -> PRA (loss off orientation) */
+    theta = atan2(BB[1], BB[0]);
+    phase = AIR_AFFINE(AIR_PI/2, theta, AIR_PI/3, 0.0, 1.0);
+    radi = _rvaLen2(BB)/_rvaLen2(AA);
+    area = _rvaLen2(AA)*BB[1];
+    ELL_3V_SET(dstParm, phase, radi, area);
+    break;
+  case rvaLattUVW:  /* AB -> UVW (loss of orientation) */
+    ELL_3V_SET(dstParm, BB[0], BB[1], AA[0]);
+    break;
+  case rvaLattXY:   /* AB -> XY (loss of orientation and scale) */
+    len = _rvaLen2(AA);
+    ELL_2V_SET(dstParm, BB[0]/len, BB[1]/len);
+    break;
+  default: ret = 1; break; /* unimplemented */
+  }
+  return ret;
+}
+
+/*
+** this assumes that dstLatt != srcLat
+*/
 static int
 lattConv(int dstLatt, double *dstParm,
          int srcLatt, const double *srcParm) {
-  double AA[2], BB[2], TT[2], theta, phase, radi, area, len,
-    tparm[RVA_LATT_PARM_NUM];
+  double AABB[4];
   int ret;
 
   ret = 0;
-  switch(srcLatt) {
-  case rvaLattAB:
-    switch(dstLatt) {
-    case rvaLattPRA:   /* AB -> PRA (loss off orientation) */
-      ELL_2V_COPY(AA, srcParm + 0);
-      ELL_2V_COPY(BB, srcParm + 2);
-      getToPosY(AA, BB);
-      theta = atan2(BB[1], BB[0]);
-      phase = AIR_AFFINE(AIR_PI/2, theta, AIR_PI/3, 0.0, 1.0);
-      radi = _rvaLen2(BB)/_rvaLen2(AA);
-      area = _rvaLen2(AA)*BB[1];
-      ELL_3V_SET(dstParm, phase, radi, area);
-      break;
-    case rvaLattXY:   /* AB -> XY (loss of orientation and scale) */
-      getToPosY(AA, BB);
-      len = _rvaLen2(AA);
-      ELL_2V_SET(dstParm, BB[0]/len, BB[1]/len);
-      break;
-    default: ret = 1; break;
-    }
-    break;
-  case rvaLattPRA:
-    switch(dstLatt) {
-      double scl, uar;
-    case rvaLattAB: /* PRA -> AB */
-      area = AIR_ABS(srcParm[2]);
-      theta = AIR_AFFINE(0, srcParm[0], 1, AIR_PI/2, AIR_PI/3);
-      radi = srcParm[1];
-      ELL_2V_SET(AA, 1.0, 0.0);
-      ELL_2V_SET(BB, radi*cos(theta), radi*sin(theta));
-      /* area from AA and BB is BB[1], but need to scale
-         these to get to requested area */
-      scl = sqrt(area/BB[1]);
-      ELL_4V_SET(dstParm, scl*AA[0], scl*AA[1], scl*BB[0], scl*BB[1]);
-      break;
-    case rvaLattXY: /* PRA -> XY: PRA -> AB -> XY */
-      if (lattConv(rvaLattAB,   tparm, rvaLattPRA, srcParm) ||
-          lattConv(rvaLattXY, dstParm, rvaLattAB, srcParm)) {
-        ret = 1; break;
-      }
-      break;
-    default: ret = 1; break;
-    }
-    break;
-  case rvaLattXY:
-    switch(dstLatt) {
-    case rvaLattAB:  /* XY -> AB */
-      ELL_4V_SET(dstParm, 1.0, 0.0, srcParm[0], srcParm[1]);
-      break;
-    case rvaLattPRA: /* XY -> PRA: XY -> AB -> PRA */
-      if (lattConv(rvaLattAB,    tparm, rvaLattXY, srcParm) ||
-          lattConv(rvaLattPRA, dstParm, rvaLattAB, srcParm)) {
-        ret = 1; break;
-      }
-      break;
-    default: ret = 1; break;
-    }
-    break;
-  default: ret = 1; break;
+  if (rvaLattAB == dstLatt) {
+    ret = lattXXtoAB(dstParm, srcLatt, srcParm);
+  } else if (rvaLattAB == srcLatt) {
+    ret = lattABtoXX(dstLatt, dstParm, srcParm);
+  } else {
+    ret = (lattXXtoAB(AABB, srcLatt, srcParm) ||
+           lattABtoXX(dstLatt, dstParm, AABB));
   }
+
   return ret;
 }
 
@@ -288,7 +301,7 @@ rvaLattSpecConvert(rvaLattSpec *dst, int latt, const rvaLattSpec *src) {
              airEnumStr(rvaLatt, src->latt), airEnumStr(rvaLatt, latt));
     return 1;
   }
-  /* else */
+  /* else no error; we're done */
   dst->latt = latt;
 
   return 0;
