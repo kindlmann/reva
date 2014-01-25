@@ -78,6 +78,9 @@ RVA_EXPORT int rvaLattSpecParse(rvaLattSpec *lsp, const char *str);
 RVA_EXPORT hestCB *rvaHestLattSpec;
 RVA_EXPORT char *rvaLattSpecSprint(char *str, const rvaLattSpec *lsp);
 
+/* grid.c */
+RVA_EXPORT int rvaGrid(Nrrd *nout, const rvaLattSpec *_lsp, double radius);
+
 /* util.c */
 RVA_EXPORT void rvaVecsFold(unsigned int count[RVA_FOLD_NUM],
                             double A[2], double B[2],
@@ -95,13 +98,12 @@ RVA_EXPORT int rvaMain(int argc, const char **argv,
                        hestParm *hparm, FILE *fusage);
 #define RVA_DECLARE(C) RVA_EXPORT unrrduCmd rva_##C##Cmd;
 #define RVA_LIST(C) &rva_##C##Cmd,
-/* F(vwflip) \ */
-/* F(vwfix) */
 /* this is the list of per-command source files */
 #define RVA_MAP(F) \
   F(about) \
   F(fold) \
   F(conv) \
-  F(dia)
+  F(dia) \
+  F(grid)
 RVA_MAP(RVA_DECLARE)
 RVA_EXPORT const unrrduCmd *const rvaCmdList[];

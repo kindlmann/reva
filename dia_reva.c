@@ -26,7 +26,9 @@
 #define INFO "make EPS diagram of a lattice"
 static const char *longInfo =
   (INFO ".\n "
-   "");
+   "A current limitation is that at most a 201x201 grid will be "
+   "drawn, but this is probably safely above what anyone would "
+   "want to see");
 
 int
 lpict(FILE *file, const rvaLattSpec *lsp,
@@ -116,8 +118,8 @@ lpict(FILE *file, const rvaLattSpec *lsp,
   if (rad[0] == rad[1]) {
     fprintf(file, "0 setgray\n");
   }
-  for (ai=-100; ai<100; ai++) {
-    for (bi=-100; bi<100; bi++) {
+  for (ai=-100; ai<=100; ai++) {
+    for (bi=-100; bi<=100; bi++) {
       double xx, yy;
       xx = ai*A[0] + bi*B[0];
       yy = ai*A[1] + bi*B[1];

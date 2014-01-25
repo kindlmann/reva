@@ -92,7 +92,14 @@ rvaMain(int argc, const char **argv,
     unsigned int ii, maxlen = 0;
     char *buff, *fmt, tdash[] = "--- %s ---";
     for (ii=0; cmdList[ii]; ii++) {
+      if (cmdList[ii]->hidden) {
+        continue;
+      }
       maxlen = AIR_MAX(maxlen, AIR_UINT(strlen(cmdList[ii]->name)));
+    }
+    if (!maxlen) {
+      fprintf(fusage, "%s: problem: maxlen = %u\n", me, maxlen);
+      airMopError(mop); return 1;
     }
     buff = AIR_CALLOC(strlen(tdash) + strlen(title) + 1, char);
     airMopAdd(mop, buff, airFree, airMopAlways);
@@ -105,6 +112,9 @@ rvaMain(int argc, const char **argv,
 
     for (ii=0; cmdList[ii]; ii++) {
       unsigned int cc, len;
+      if (cmdList[ii]->hidden) {
+        continue;
+      }
       len = AIR_UINT(strlen(cmdList[ii]->name));
       strcpy(buff, "");
       for (cc=len; cc<maxlen; cc++)
@@ -121,9 +131,22 @@ rvaMain(int argc, const char **argv,
     airMopError(mop);
     return 1;
   }
+  /* else, we see if its --version */
+  if (!strcmp("--version", argv[1])) {
+    char vbuff[AIR_STRLEN_LARGE];
+    airTeemVersionSprint(vbuff);
+    printf("%s\n", vbuff);
+    exit(0);
+  }
   /* else, we should see if they're asking for a command we know about */
   for (i=0; cmdList[i]; i++) {
     if (!strcmp(argv[1], cmdList[i]->name)) {
+      break;
+    }
+    /* if user typed "prog --help" we treat it as "prog about",
+       but only if there is an "about" command */
+    if (!strcmp("--help", argv[1])
+        && !strcmp("about", cmdList[i]->name)) {
       break;
     }
   }

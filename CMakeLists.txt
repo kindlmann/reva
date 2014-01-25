@@ -29,8 +29,8 @@ find_package(Teem REQUIRED)
 include(${Teem_USE_FILE})
 
 # foo_reva.c implements "reva foo"
-add_library(rva rva.h rvaPrivate.h util.c flotsam.c spec.c
-            about_reva.c fold_reva.c dia_reva.c conv_reva.c)
+add_library(rva rva.h rvaPrivate.h util.c flotsam.c spec.c grid.c
+            about_reva.c fold_reva.c dia_reva.c conv_reva.c grid_reva.c)
 add_executable(reva reva.c)
 target_link_libraries(reva rva teem)
 
