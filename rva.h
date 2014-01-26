@@ -101,15 +101,16 @@ RVA_EXPORT double rvaPsi(unsigned int *maxRadius,
                          const pullEnergySpec *espec,
                          double AA[2], double BB[2]);
 
-/* reva.c */
-#define RVA_DECLARE(C) RVA_EXPORT unrrduCmd rva_##C##Cmd;
-#define RVA_LIST(C) &rva_##C##Cmd,
-/* this is the list of per-command source files */
+/* this is the list reva commands; "reva foo" is implemented
+   in foo_reva.c */
 #define RVA_MAP(F) \
   F(about) \
   F(fold) \
   F(conv) \
   F(dia) \
   F(grid)
+
+/* reva.c */
+#define RVA_DECLARE(C) RVA_EXPORT unrrduCmd rva_##C##Cmd;
 RVA_MAP(RVA_DECLARE)
 

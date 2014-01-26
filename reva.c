@@ -27,6 +27,7 @@
 ** NULL-terminated array of unrrduCmd pointers, as ordered by
 ** RVA_MAP macro
 */
+#define RVA_LIST(C) &rva_##C##Cmd,
 static const unrrduCmd *const
 cmdList[] = {
   RVA_MAP(RVA_LIST)
