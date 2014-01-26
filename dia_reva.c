@@ -30,120 +30,147 @@ static const char *longInfo =
    "drawn, but this is probably safely above what anyone would "
    "want to see");
 
-int
-lpict(FILE *file, const rvaLattSpec *lsp,
-      double min[2], double max[2], double scl,
-      double rad[2]) {
-  rvaLattSpec *lspAB;
-  double A[2], B[2], bbox[2][2];
-  int ai, bi;
+typedef struct {
+  FILE *file;
+  const rvaLattSpec *lsp;
+  double min[2], max[2], scl, rad[2];
+} lpictData;
 
-  lspAB = rvaLattSpecNew();
-  rvaLattSpecConvert(lspAB, rvaLattAB, lsp);
-  /*
-  if (uni) {
-    A[0] = lspUVW->parm[2];
-    A[1] = 0.0;
-    B[0] = lspUVW->parm[0]*lspUVW->parm[1]*A[0];
-    B[1] = lspUVW->parm[1]*A[0];
-  } else {
-  */
+static int
+lpictInit(unsigned int anum, const rvaLattSpec *lspAB, void *_data) {
+  double A[2], B[2], bbox[2][2];
+  char lstr[AIR_STRLEN_MED];
+  lpictData *d;
+
+  d = AIR_CAST(lpictData *, _data);
   ELL_2V_COPY(A, lspAB->parm + 0);
   ELL_2V_COPY(B, lspAB->parm + 2);
-  bbox[0][0] = scl*min[0]; /* min */
-  bbox[0][1] = scl*min[1];
-  bbox[1][0] = scl*max[0]; /* max */
-  bbox[1][1] = scl*max[1];
-  /*
-    bbox[0][0] = scl*min[0] - 2*rad;
-    bbox[0][1] = scl*min[1] - 2*rad;
-    bbox[1][0] = scl*max[0] + 2*rad;
-    bbox[1][1] = scl*max[1] + 2*rad;
-  */
-
-  fprintf(file, "%%!PS-Adobe-3.0 EPSF-3.0\n");
-  fprintf(file, "%%%%Creator: lattice picture\n");
-  fprintf(file, "%%%%Title: blah blah blah\n");
-  fprintf(file, "%%%%Pages: 1\n");
-  fprintf(file, "%%%%BoundingBox: %d %d %d %d\n",
+  bbox[0][0] = d->scl*d->min[0]; /* min */
+  bbox[0][1] = d->scl*d->min[1];
+  bbox[1][0] = d->scl*d->max[0]; /* max */
+  bbox[1][1] = d->scl*d->max[1];
+  fprintf(d->file, "%%!PS-Adobe-3.0 EPSF-3.0\n");
+  fprintf(d->file, "%%%%Creator: reva dia\n");
+  fprintf(d->file, "%%%%Title: %s\n", rvaLattSpecSprint(lstr, d->lsp));
+  fprintf(d->file, "%%%%Pages: 1\n");
+  fprintf(d->file, "%%%%BoundingBox: %d %d %d %d\n",
           AIR_CAST(int, floor(bbox[0][0])),
           AIR_CAST(int, floor(bbox[0][1])),
           AIR_CAST(int, ceil(bbox[1][0])),
-          AIR_CAST(int, ceil(bbox[1][0])));
-  fprintf(file, "%%%%HiResBoundingBox: %g %g %g %g\n",
+          AIR_CAST(int, ceil(bbox[1][1])));
+  fprintf(d->file, "%%%%HiResBoundingBox: %g %g %g %g\n",
           bbox[0][0], bbox[0][1], bbox[1][0], bbox[1][1]);
-  fprintf(file, "%%%%EndComments\n");
-  fprintf(file, "%%%%BeginProlog\n");
-  fprintf(file, "%%%%EndProlog\n");
-  fprintf(file, "%%%%Page: 1 1\n");
-  fprintf(file, "gsave\n");
+  fprintf(d->file, "%%%%EndComments\n");
+  fprintf(d->file, "%%%%BeginProlog\n");
+  fprintf(d->file, "%%%%EndProlog\n");
+  fprintf(d->file, "%%%%Page: 1 1\n");
+  fprintf(d->file, "gsave\n");
 
+  fprintf(d->file, "%g %g moveto\n", bbox[0][0], bbox[0][1]);
+  fprintf(d->file, "%g %g lineto\n", bbox[1][0], bbox[0][1]);
+  fprintf(d->file, "%g %g lineto\n", bbox[1][0], bbox[1][1]);
+  fprintf(d->file, "%g %g lineto\n", bbox[0][0], bbox[1][1]);
+  fprintf(d->file, "closepath\n");
+  fprintf(d->file, "clip\n");
+  fprintf(d->file, "newpath\n");
 
-  fprintf(file, "%g %g moveto\n", bbox[0][0], bbox[0][1]);
-  fprintf(file, "%g %g lineto\n", bbox[1][0], bbox[0][1]);
-  fprintf(file, "%g %g lineto\n", bbox[1][0], bbox[1][1]);
-  fprintf(file, "%g %g lineto\n", bbox[0][0], bbox[1][1]);
-  fprintf(file, "closepath\n");
-  fprintf(file, "clip\n");
-  fprintf(file, "newpath\n");
-
-  if (rad[0] == rad[1]) {
-    fprintf(file, "0.5 setgray\n");
-    fprintf(file, "%g setlinewidth\n", rad[0]);
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*A[0], scl*A[1]);
-    fprintf(file, "stroke\n");
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*B[0], scl*B[1]);
-    fprintf(file, "stroke\n");
+  if (d->rad[0] == d->rad[1]) {
+    fprintf(d->file, "0.5 setgray\n");
+    fprintf(d->file, "%g setlinewidth\n", d->rad[0]);
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*A[0], d->scl*A[1]);
+    fprintf(d->file, "stroke\n");
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*B[0], d->scl*B[1]);
+    fprintf(d->file, "stroke\n");
   } else {
-    fprintf(file, "1 setgray\n");
-    fprintf(file, "%g setlinewidth\n", rad[0]);
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*A[0], scl*A[1]);
-    fprintf(file, "stroke\n");
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*B[0], scl*B[1]);
-    fprintf(file, "stroke\n");
-    fprintf(file, "0.5 setgray\n");
-    fprintf(file, "%g setlinewidth\n", rad[1]);
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*A[0], scl*A[1]);
-    fprintf(file, "stroke\n");
-    fprintf(file, "0 0 moveto\n");
-    fprintf(file, "%g %g lineto\n", scl*B[0], scl*B[1]);
-    fprintf(file, "stroke\n");
+    fprintf(d->file, "1 setgray\n");
+    fprintf(d->file, "%g setlinewidth\n", d->rad[0]);
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*A[0], d->scl*A[1]);
+    fprintf(d->file, "stroke\n");
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*B[0], d->scl*B[1]);
+    fprintf(d->file, "stroke\n");
+    fprintf(d->file, "0.5 setgray\n");
+    fprintf(d->file, "%g setlinewidth\n", d->rad[1]);
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*A[0], d->scl*A[1]);
+    fprintf(d->file, "stroke\n");
+    fprintf(d->file, "0 0 moveto\n");
+    fprintf(d->file, "%g %g lineto\n", d->scl*B[0], d->scl*B[1]);
+    fprintf(d->file, "stroke\n");
+  }
+  if (d->rad[0] == d->rad[1]) {
+    fprintf(d->file, "0 setgray\n");
+  }
+  return 0;
+}
+
+static int
+lpictPoint(const double xy[2], const rvaLattSpec *lspAB, void *_data) {
+  lpictData *d;
+
+  AIR_UNUSED(lspAB);
+  d = AIR_CAST(lpictData *, _data);
+  if (!( AIR_IN_OP(d->min[0] - 4*d->rad[0], xy[0],
+                   d->max[0] + 4*d->rad[0]) &&
+         AIR_IN_OP(d->min[1] - 4*d->rad[0], xy[1],
+                   d->max[1] + 4*d->rad[0]) )) {
+    /* nothing to draw */
+    return 0;
+  }
+  if (d->rad[0] == d->rad[1]) {
+    fprintf(d->file, "%g %g %g 0 360 arc closepath\n",
+            d->scl*xy[0], d->scl*xy[1], d->rad[0]);
+    fprintf(d->file, "fill\n");
+  } else {
+    fprintf(d->file, "%g %g %g 0 360 arc closepath\n",
+            d->scl*xy[0], d->scl*xy[1], d->rad[0]);
+    fprintf(d->file, "1 setgray fill\n");
+    fprintf(d->file, "%g %g %g 0 360 arc closepath\n",
+            d->scl*xy[0], d->scl*xy[1], d->rad[1]);
+    fprintf(d->file, "0 setgray fill\n");
   }
 
-  if (rad[0] == rad[1]) {
-    fprintf(file, "0 setgray\n");
-  }
-  for (ai=-100; ai<=100; ai++) {
-    for (bi=-100; bi<=100; bi++) {
-      double xx, yy;
-      xx = ai*A[0] + bi*B[0];
-      yy = ai*A[1] + bi*B[1];
-      if (!( AIR_IN_OP(min[0] - 4*rad[0], xx, max[0] + 4*rad[0]) &&
-             AIR_IN_OP(min[1] - 4*rad[0], yy, max[1] + 4*rad[0]) )) {
-        continue;
-      }
-      if (rad[0] == rad[1]) {
-        fprintf(file, "%g %g %g 0 360 arc closepath\n",
-                scl*xx, scl*yy, rad[0]);
-        fprintf(file, "fill\n");
-      } else {
-        fprintf(file, "%g %g %g 0 360 arc closepath\n",
-                scl*xx, scl*yy, rad[0]);
-        fprintf(file, "1 setgray fill\n");
-        fprintf(file, "%g %g %g 0 360 arc closepath\n",
-                scl*xx, scl*yy, rad[1]);
-        fprintf(file, "0 setgray fill\n");
-      }
-    }
+  return 0;
+}
+
+static int
+lpictDone(void *_data) {
+  lpictData *d;
+
+  d = AIR_CAST(lpictData *, _data);
+  fprintf(d->file, "grestore\n");
+  return 0;
+}
+
+static int
+lpict(FILE *file, const rvaLattSpec *lsp,
+      double min[2], double max[2], double scl,
+      double rad[2]) {
+  static const char me[]="lpict";
+  lpictData data;
+  double xy[2], rd, rr;
+
+  data.file = file;
+  data.lsp = lsp;
+  data.scl = scl;
+  ELL_2V_COPY(data.min, min);
+  ELL_2V_COPY(data.max, max);
+  ELL_2V_COPY(data.rad, rad);
+
+  rd = 0;
+  ELL_2V_SET(xy, min[0], min[1]); rr = ELL_2V_LEN(xy); rd = AIR_MAX(rr, rd);
+  ELL_2V_SET(xy, min[0], max[1]); rr = ELL_2V_LEN(xy); rd = AIR_MAX(rr, rd);
+  ELL_2V_SET(xy, max[0], min[1]); rr = ELL_2V_LEN(xy); rd = AIR_MAX(rr, rd);
+  ELL_2V_SET(xy, max[0], max[1]); rr = ELL_2V_LEN(xy); rd = AIR_MAX(rr, rd);
+  if (rvaForEach(lsp, rd, AIR_TRUE /* includeZero */,
+                 lpictInit, lpictPoint, lpictDone, &data)) {
+    biffAddf(RVA, "%s: problem", me);
+    return 1;
   }
 
-  fprintf(file, "grestore\n");
-  rvaLattSpecNix(lspAB);
   return 0;
 }
 
@@ -157,16 +184,11 @@ rva_diaMain(int argc, const char **argv, const char *me,
   double min[2], max[2], scl, rad[2];
   rvaLattSpec *lsp;
   char *outStr;
-  /* int uni; */
 
   mop = airMopNew();
   hopt = NULL;
   hestOptAdd(&hopt, NULL, "latt", airTypeOther, 1, 1, &lsp, NULL,
              "lattice definition", NULL, NULL, rvaHestLattSpec);
-  /*
-  hestOptAdd(&hopt, "uni", NULL, airTypeInt, 0, 0, &uni, NULL,
-             "assuming parameterization of uniform lattice PDF");
-  */
   hestOptAdd(&hopt, "min", "minX minY", airTypeDouble, 2, 2, min, "0 0",
              "lower left corner");
   hestOptAdd(&hopt, "max", "maxX maxY", airTypeDouble, 2, 2, max, "2 2",

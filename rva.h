@@ -79,6 +79,16 @@ RVA_EXPORT hestCB *rvaHestLattSpec;
 RVA_EXPORT char *rvaLattSpecSprint(char *str, const rvaLattSpec *lsp);
 
 /* grid.c */
+RVA_EXPORT int rvaForEach(const rvaLattSpec *lsp, double radius,
+                          int includeZero,
+                          int (*initCB)(unsigned int num,
+                                        const rvaLattSpec *lspAB,
+                                        void *data),
+                          int (*pointCB)(const double xy[2],
+                                         const rvaLattSpec *lspAB,
+                                         void *data),
+                          int (*doneCB)(void *data),
+                          void *dataCB);
 RVA_EXPORT int rvaGrid(Nrrd *nout, const rvaLattSpec *_lsp, double radius);
 
 /* util.c */
