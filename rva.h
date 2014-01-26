@@ -101,11 +101,7 @@ RVA_EXPORT double rvaPsi(unsigned int *maxRadius,
                          const pullEnergySpec *espec,
                          double AA[2], double BB[2]);
 
-/* flotsam.c */
-RVA_EXPORT int rvaMain(int argc, const char **argv,
-                       const char *cmd, const char *title,
-                       const unrrduCmd *const *cmdList,
-                       hestParm *hparm, FILE *fusage);
+/* reva.c */
 #define RVA_DECLARE(C) RVA_EXPORT unrrduCmd rva_##C##Cmd;
 #define RVA_LIST(C) &rva_##C##Cmd,
 /* this is the list of per-command source files */
@@ -116,4 +112,4 @@ RVA_EXPORT int rvaMain(int argc, const char **argv,
   F(dia) \
   F(grid)
 RVA_MAP(RVA_DECLARE)
-RVA_EXPORT const unrrduCmd *const rvaCmdList[];
+

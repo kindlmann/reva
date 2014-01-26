@@ -23,6 +23,16 @@
 
 #include "rva.h"
 
+/*
+** NULL-terminated array of unrrduCmd pointers, as ordered by
+** RVA_MAP macro
+*/
+static const unrrduCmd *const
+cmdList[] = {
+  RVA_MAP(RVA_LIST)
+  NULL
+};
+
 int
 main(int argc, const char **argv) {
   hestParm *hparm;
@@ -43,9 +53,9 @@ main(int argc, const char **argv) {
   hparm->cleverPluralizeOtherY = AIR_TRUE;
   hparm->columns = 78;
   airMopAdd(mop, hparm, (airMopper)hestParmFree, airMopAlways);
-  ret = rvaMain(argc, argv,
-                "reva", "Brevais Lattice Hacking",
-                rvaCmdList, hparm, stderr);
+  ret = unrrduCmdMain(argc, argv,
+                      "reva", "Brevais Lattice Hacking",
+                      cmdList, hparm, stderr);
   airMopOkay(mop);
   return ret;
 }
